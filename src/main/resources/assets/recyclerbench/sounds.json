@@ -1,0 +1,11 @@
+{
+  "chainsaw": {
+    "subtitle": "subtitles.recyclerbench.chainsaw",
+    "sounds": [
+      {
+        "name": "recyclerbench:chainsaw",
+        "stream": false
+      }
+    ]
+  }
+}

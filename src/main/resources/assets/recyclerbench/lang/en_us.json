@@ -1,0 +1,22 @@
+{
+  "block.recyclerbench.recycler_bench": "Recycler Bench",
+  "container.recyclerbench.recycler_bench": "Recycler Bench",
+  "itemGroup.recyclerbench": "Recycler Bench",
+  "tooltip.recyclerbench.summary": "Returns %s%% of a tool or armor's ingredients",
+  "tooltip.recyclerbench.tools": "Swords, tools, armor, and items added in the config",
+  "gui.recyclerbench.rate": "%s%% back",
+  "subtitles.recyclerbench.chainsaw": "Chainsaw roaring",
+  "recyclerbench.configuration.recycling": "Recycling",
+  "recyclerbench.configuration.recycling.return_rate": "Return Rate",
+  "recyclerbench.configuration.recycling.return_rate.tooltip": "Fraction of each ingredient returned. 0.6 returns 60 percent.",
+  "recyclerbench.configuration.recycling.process_ticks": "Process Time",
+  "recyclerbench.configuration.recycling.process_ticks.tooltip": "How long recycling takes, in ticks. 20 ticks is one second.",
+  "recyclerbench.configuration.recycling.play_chainsaw": "Chainsaw Sound",
+  "recyclerbench.configuration.recycling.play_chainsaw.tooltip": "Play a chainsaw while the bench is grinding an item.",
+  "recyclerbench.configuration.recycling.automatic_equipment": "Automatic Tools And Armor",
+  "recyclerbench.configuration.recycling.automatic_equipment.tooltip": "Recycle tools and armor by reading their crafting or smithing recipe.",
+  "recyclerbench.configuration.recycling.extra_recipes": "Extra Recipes",
+  "recyclerbench.configuration.recycling.extra_recipes.tooltip": "Custom items. Format: namespace:item=namespace:ingredient*count,...",
+  "recyclerbench.configuration.recycling.disabled_items": "Disabled Items",
+  "recyclerbench.configuration.recycling.disabled_items.tooltip": "Item ids that can never be recycled."
+}
