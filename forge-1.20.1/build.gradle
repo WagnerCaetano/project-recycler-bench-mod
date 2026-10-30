@@ -1,0 +1,85 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev.legacyforge'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = 'recyclerbench-forge-1.20.1'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+legacyForge {
+    version = '1.20.1-47.4.28'
+
+    parchment {
+        minecraftVersion = '1.20.1'
+        mappingsVersion = '2023.09.03'
+    }
+
+    accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+    validateAccessTransformers = true
+
+    runs {
+        client {
+            client()
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+        }
+
+        configureEach {
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+
+    mods {
+        recyclerbench {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+def sharedAssets = layout.buildDirectory.dir('shared-assets')
+def syncSharedAssets = tasks.register('syncSharedAssets', Sync) {
+    from(rootProject.file('src/main/resources/assets')) {
+        into 'assets'
+    }
+    into sharedAssets
+}
+
+sourceSets.main.resources.srcDir(sharedAssets)
+tasks.named('processResources') {
+    dependsOn syncSharedAssets
+}
+
+def generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
+    def replaceProperties = [
+            minecraft_version_range: '[1.20.1,1.20.2)',
+            forge_version_range    : '[47,)',
+            loader_version_range   : '[47,)',
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from 'src/main/templates'
+    into layout.buildDirectory.dir('generated/sources/modMetadata')
+}
+sourceSets.main.resources.srcDir(generateModMetadata)
+legacyForge.ideSyncTask generateModMetadata
+
+tasks.named('assemble') {
+    dependsOn 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

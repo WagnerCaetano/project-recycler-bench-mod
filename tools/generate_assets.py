@@ -36,147 +36,188 @@ def mix(a, b, t: float):
     return tuple(clamp(int(a[i] + (b[i] - a[i]) * t)) for i in range(3))
 
 
-STEEL = (58, 64, 72)
-STEEL_DARK = (32, 36, 42)
-STEEL_MID = (86, 94, 104)
-STEEL_LIGHT = (168, 176, 184)
-YELLOW = (232, 176, 28)
-BLACK = (22, 24, 26)
-GREEN = (42, 168, 64)
-GREEN_DARK = (16, 92, 42)
-BIN = (10, 16, 14)
-GLOW = (28, 110, 58)
-GLOW_HOT = (126, 236, 92)
+# Vanilla stone, copper, and iron. Colors stay close to the vanilla textures.
+STONE = ((122, 122, 122), (136, 136, 136), (108, 108, 108), (148, 148, 148), (96, 96, 96))
+MORTAR = (58, 58, 58)
+COPPER = (184, 102, 70)
+COPPER_LIGHT = (214, 138, 98)
+COPPER_DARK = (132, 68, 46)
+IRON = (198, 198, 198)
+IRON_LIGHT = (232, 232, 232)
+IRON_DARK = (146, 146, 146)
+DARK = (42, 44, 48)
+DARK_LIGHT = (68, 70, 74)
+PIT = (28, 30, 32)
 
 
-def steel_pixel(x, y, seed=0):
-    n = ((x * 17 + y * 31 + seed) % 7) - 3
-    base = STEEL
-    if (x + y) % 8 == 0:
-        base = STEEL_MID
-    if x in (0, 15) or y in (0, 15):
-        base = STEEL_DARK
-    return tuple(clamp(c + n) for c in base) + (255,)
-
-
-def hazard_pixel(x, y):
-    stripe = (x + y) // 2
-    color = YELLOW if stripe % 2 == 0 else BLACK
-    if y % 2 == 0 and color == YELLOW:
-        color = mix(color, (255, 220, 90), 0.35)
+def px(color):
     return color + (255,)
 
 
-def rivet(x, y, cx, cy):
-    return abs(x - cx) + abs(y - cy) <= 1 and (x != cx or y != cy or True)
+def stone_pixel(x, y):
+    row = y // 4
+    local_x = (x + (4 if row % 2 else 0)) % 8
+    local_y = y % 4
+    if local_x == 0 or local_y == 0:
+        return MORTAR
+    return STONE[(x * 3 + y * 5 + local_x) % len(STONE)]
 
 
-def draw_logo(canvas, lit=False):
-    green = GLOW_HOT if lit else GREEN
-    dark = (20, 120, 48) if lit else GREEN_DARK
-    cx, cy = 7.5, 8.2
-    for y in range(16):
-        for x in range(16):
-            dx = x - cx
-            dy = (y - cy) * 0.96
-            radius = math.hypot(dx, dy)
-            angle = (math.degrees(math.atan2(dy, dx)) + 360) % 360
-            arc = angle % 120
-            on_ring = 3.15 <= radius <= 5.15 and not (96 <= arc <= 118)
-            # Arrow head at the end of each 120-degree arc.
-            head = False
-            for base in (20, 140, 260):
-                tip = math.radians(base)
-                tx = cx + math.cos(tip) * 5.3
-                ty = cy + math.sin(tip) * 5.1
-                if abs(x - tx) <= 1.2 and abs(y - ty) <= 1.2 and radius >= 3.4:
-                    head = True
-            if on_ring or head:
-                shade = dark if radius < 3.7 else green
-                canvas[y][x] = shade + (255,)
+def copper_pixel(x, y):
+    if x == 0 or y == 0:
+        return COPPER_LIGHT
+    if x == 15 or y == 15:
+        return COPPER_DARK
+    if (x + y * 2) % 5 == 0:
+        return COPPER_DARK
+    if (x * 2 + y) % 4 == 0:
+        return COPPER_LIGHT
+    return COPPER
 
 
-def front_pixels(lit=False):
-    rows = [[steel_pixel(x, y, 2) for x in range(16)] for y in range(16)]
-    for y in range(2):
-        for x in range(16):
-            rows[y][x] = hazard_pixel(x, y)
-    for y in range(13, 16):
-        for x in range(16):
-            rows[y][x] = (18, 20, 22, 255) if y < 15 else hazard_pixel(x, y)
-    # Intake slot and saw teeth.
-    for y in range(11, 14):
-        for x in range(2, 14):
-            rows[y][x] = (14, 16, 18, 255)
-    for x in range(2, 14):
-        tooth = YELLOW if lit and x % 2 == 0 else (190, 198, 206)
-        if x % 2 == 0:
-            rows[12][x] = tooth + (255,)
-        else:
-            rows[11][x] = (46, 50, 56, 255)
-    # Panel inset behind the logo.
-    for y in range(3, 11):
-        for x in range(3, 13):
-            rows[y][x] = steel_pixel(x, y, 5)
-            if x in (3, 12) or y in (3, 10):
-                rows[y][x] = STEEL_DARK + (255,)
-    draw_logo(rows, lit)
-    # Corner bolts.
-    for cx, cy in ((1, 3), (14, 3), (1, 10), (14, 10)):
-        rows[cy][cx] = STEEL_LIGHT + (255,)
-    return rows
+def iron_pixel(x, y, lit=False):
+    if lit and (y < 2 or (x + y) % 6 == 0):
+        return (232, 164, 96)
+    if y % 4 == 0:
+        return IRON_LIGHT
+    if y % 4 == 3:
+        return IRON_DARK
+    if (x + y) % 5 == 0:
+        return IRON_DARK
+    return IRON
 
 
-def side_pixels(lit=False):
-    rows = [[steel_pixel(x, y, 4) for x in range(16)] for y in range(16)]
-    for y in range(16):
-        rows[y][0] = STEEL_LIGHT + (255,)
-        rows[y][15] = STEEL_DARK + (255,)
-    for y in range(14, 16):
-        for x in range(16):
-            rows[y][x] = hazard_pixel(x, y)
-    # Vertical vents.
-    for vent_x in (4, 7, 10):
-        for y in range(3, 12):
-            color = GLOW_HOT if lit and y % 2 == 0 else (20, 24, 28)
-            rows[y][vent_x] = color + (255,)
-            rows[y][vent_x + 1] = STEEL_DARK + (255,)
-    for cx, cy in ((2, 2), (13, 2), (2, 12), (13, 12)):
-        rows[cy][cx] = STEEL_LIGHT + (255,)
-    return rows
-
-
-def inside_pixels(lit=False):
+def paint_map(lines, lit=False):
     rows = []
-    for y in range(16):
+    for y, line in enumerate(lines):
         row = []
-        for x in range(16):
-            dx = x - 7.5
-            dy = y - 7.5
-            dist = math.hypot(dx, dy)
-            if lit:
-                color = mix(BIN, GLOW_HOT, max(0.0, 1.0 - dist / 8.0))
-                if dist < 2.2:
-                    color = (210, 255, 170)
+        for x, mark in enumerate(line):
+            if mark == "S":
+                color = stone_pixel(x, y)
+            elif mark == "s":
+                color = tuple(clamp(c - 26) for c in stone_pixel(x, y))
+            elif mark == "C":
+                color = copper_pixel(x, y)
+            elif mark == "c":
+                color = COPPER_DARK
+            elif mark == "I":
+                color = (214, 146, 86) if lit and (x + y) % 5 == 0 else iron_pixel(x, y, False)
+            elif mark == "L":
+                color = (236, 186, 120) if lit else IRON_LIGHT
+            elif mark == "i":
+                color = IRON_DARK
+            elif mark == ".":
+                color = PIT
             else:
-                color = mix((6, 10, 8), GLOW, max(0.0, 1.0 - dist / 9.0))
-            if (x + y) % 5 == 0 and dist > 3:
-                color = mix(color, STEEL_DARK, 0.35)
-            row.append(tuple(color) + (255,))
+                color = DARK
+            row.append(px(color))
         rows.append(row)
     return rows
 
 
-def bottom_pixels():
-    rows = [[steel_pixel(x, y, 9) for x in range(16)] for y in range(16)]
-    for y in range(16):
-        for x in range(16):
-            rows[y][x] = tuple(clamp(c - 18) for c in rows[y][x][:3]) + (255,)
-    for cx, cy in ((2, 2), (13, 2), (2, 13), (13, 13)):
-        rows[cy][cx] = STEEL_MID + (255,)
-        if cy + 1 < 16:
-            rows[cy + 1][cx] = STEEL_DARK + (255,)
+def front_pixels(lit=False):
+    # Stone body, a one-pixel copper frame, and a blank iron plate.
+    return paint_map([
+        "ssssssssssssssss",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSccccccccccSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSScILIIIIILcSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSScILIIIIILcSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSScIIIIIIIIcSSS",
+        "SSSccccccccccSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "ssssssssssssssss",
+    ], lit)
+
+
+def side_pixels(lit=False):
+    # Stone bricks, a copper cap, and an iron band.
+    lines = [
+        "CCCCCCCCCCCCCCCC",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSsSSSSSSSsSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "IIIIIIIIIIIIIIII",
+        "ILIIIIIIIIIIILII",
+        "IIIIIIIIIIIIIIII",
+        "SSSSSSSSSSSSSSSS",
+        "SSsSSSSSSSsSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "SSSSSSSSSSSSSSSS",
+        "ssssssssssssssss",
+    ]
+    rows = paint_map(lines, lit)
+    for x in (2, 13):
+        rows[3][x] = px(COPPER_LIGHT)
+        rows[3][x + 1] = px(COPPER_DARK)
+        rows[12][x] = px(COPPER_LIGHT)
+        rows[12][x + 1] = px(COPPER_DARK)
     return rows
+
+
+def bottom_pixels():
+    return [[px(tuple(clamp(c - 28) for c in stone_pixel(x, y))) for x in range(16)] for y in range(16)]
+
+
+def trim_pixels():
+    rows = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            if (x % 5 == 1 and y % 5 == 1):
+                color = IRON_LIGHT
+            elif x % 5 == 2 and y % 5 == 2:
+                color = IRON_DARK
+            else:
+                color = copper_pixel(x, y)
+            row.append(px(color))
+        rows.append(row)
+    return rows
+
+
+def dark_pixels():
+    rows = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            color = DARK_LIGHT if (x * 3 + y * 5) % 7 == 0 else DARK if (x + y) % 3 else PIT
+            row.append(px(color))
+        rows.append(row)
+    return rows
+
+
+def shredder_pixels(lit=False):
+    # Round blade inside a copper ring. The model shows pixels 3..12.
+    tooth = "L" if lit else "I"
+    hub = "L" if lit else "i"
+    ring = [
+        f"...cccc...",
+        f"..c....c..",
+        f".c..{tooth}{tooth}..c.",
+        f"c..{tooth}..{tooth}..c",
+        f"c.{tooth}.{hub}{hub}.{tooth}.c",
+        f"c.{tooth}.{hub}{hub}.{tooth}.c",
+        f"c..{tooth}..{tooth}..c",
+        f".c..{tooth}{tooth}..c.",
+        f"..c....c..",
+        f"...cccc...",
+    ]
+    for line in ring:
+        if len(line) != 10:
+            raise ValueError(f"shredder row {line!r} is {len(line)} wide")
+    padded = ["." * 16] * 3 + ["..." + line + "..." for line in ring] + ["." * 16] * 3
+    return paint_map(padded, lit)
 
 
 def blit_rows(path: Path, rows) -> None:
@@ -274,10 +315,13 @@ def main() -> None:
     blit_rows(BLOCK / "front_lit.png", front_pixels(True))
     blit_rows(BLOCK / "side.png", side_pixels(False))
     blit_rows(BLOCK / "side_lit.png", side_pixels(True))
-    blit_rows(BLOCK / "inside.png", inside_pixels(False))
-    blit_rows(BLOCK / "inside_lit.png", inside_pixels(True))
     blit_rows(BLOCK / "bottom.png", bottom_pixels())
-    write_png(BLOCK / "hazard.png", 16, 16, lambda x, y: hazard_pixel(x, y))
+    blit_rows(BLOCK / "trim.png", trim_pixels())
+    blit_rows(BLOCK / "dark.png", dark_pixels())
+    blit_rows(BLOCK / "iron.png", [[px(iron_pixel(x, y, False)) for x in range(16)] for y in range(16)])
+    blit_rows(BLOCK / "iron_lit.png", [[px(iron_pixel(x, y, True)) for x in range(16)] for y in range(16)])
+    blit_rows(BLOCK / "shredder.png", shredder_pixels(False))
+    blit_rows(BLOCK / "shredder_lit.png", shredder_pixels(True))
     write_png(GUI / "recycler_bench.png", 256, 256, gui_pixels)
     write_wav(SOUND / "chainsaw.wav")
     print("wrote textures and wav")
