@@ -18,8 +18,8 @@ public final class RecyclerConfig {
                 "Tools and armor are recycled from their crafting or smithing recipe.",
                 "A diamond chestplate costs 8 diamonds. At 0.6 that is 8 * 0.6 = 4.8, which rounds to 5.",
                 "0.5 and above rounds up (4.5 -> 5, 0.6 -> 1). Below 0.5 rounds down (4.3 -> 4, 0.4 -> 0).",
-                "One-ingredient costs therefore come back whole at 60%: a netherite upgrade returns the ingot, the template, and the diamond piece.",
-                "Add those items to disabled_items if a world should not allow that.",
+                "An item below min_durability remaining is destroyed and returns nothing. 0.5 means under 50 percent. Set it to 0 to ignore wear.",
+                "When netherite_ingot_only is true, a recipe that includes a netherite ingot returns only that ingot.",
                 "Tag ingredients (such as wooden planks) return the first item in the tag. Override them with extra_recipes if you want a specific item.",
                 "This file is written to config/recyclerbench-common.toml."
         );
@@ -37,6 +37,18 @@ public final class RecyclerConfig {
     public static final ModConfigSpec.BooleanValue PLAY_CHAINSAW = BUILDER
             .comment("Play a chainsaw while the bench is grinding an item.")
             .define("play_chainsaw", true);
+
+    public static final ModConfigSpec.DoubleValue MIN_DURABILITY = BUILDER
+            .comment("Minimum remaining durability, as a fraction of the maximum.",
+                    "Below this, the item is recycled into nothing. 0.5 rejects anything under 50 percent.",
+                    "Items without durability ignore this. Set it to 0 to accept any wear.")
+            .defineInRange("min_durability", 0.5D, 0.0D, 1.0D);
+
+    public static final ModConfigSpec.BooleanValue NETHERITE_INGOT_ONLY = BUILDER
+            .comment("When a recipe includes a netherite ingot, return only that ingot.",
+                    "A netherite upgrade then keeps the ingot and drops the smithing template and the diamond piece.",
+                    "Set this to false to return every ingredient.")
+            .define("netherite_ingot_only", true);
 
     public static final ModConfigSpec.BooleanValue AUTOMATIC_EQUIPMENT = BUILDER
             .comment("Recycle vanilla and modded tools and armor by reading their crafting or smithing recipe.",
@@ -79,6 +91,14 @@ public final class RecyclerConfig {
 
     public static boolean playChainsaw() {
         return !SPEC.isLoaded() || PLAY_CHAINSAW.get();
+    }
+
+    public static double minDurability() {
+        return SPEC.isLoaded() ? MIN_DURABILITY.get() : 0.5D;
+    }
+
+    public static boolean netheriteIngotOnly() {
+        return !SPEC.isLoaded() || NETHERITE_INGOT_ONLY.get();
     }
 
     public static boolean automaticEquipment() {

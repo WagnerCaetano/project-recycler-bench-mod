@@ -2,25 +2,22 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "CBI",
-    "CHI",
-    "CFI"
+    "ICI",
+    "CHC",
+    "IPI"
   ],
   "key": {
-    "C": {
-      "item": "minecraft:copper_ingot"
-    },
-    "B": {
-      "item": "minecraft:bricks"
-    },
     "I": {
       "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:copper_ingot"
     },
     "H": {
       "item": "minecraft:hopper"
     },
-    "F": {
-      "item": "minecraft:blast_furnace"
+    "P": {
+      "item": "minecraft:piston"
     }
   },
   "result": {

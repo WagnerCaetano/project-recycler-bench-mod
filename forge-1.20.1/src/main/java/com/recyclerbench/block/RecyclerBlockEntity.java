@@ -145,8 +145,12 @@ public class RecyclerBlockEntity extends BlockEntity implements MenuProvider {
             this.tracked = single(input);
         }
 
+        if (!Recycling.canRecycle(level, input)) {
+            this.setLit(false);
+            return;
+        }
         List<ItemStack> results = Recycling.resultsFor(level, input);
-        if (results.isEmpty() || !this.insertResults(results, true)) {
+        if (!results.isEmpty() && !this.insertResults(results, true)) {
             this.setLit(false);
             return;
         }
@@ -165,7 +169,9 @@ public class RecyclerBlockEntity extends BlockEntity implements MenuProvider {
             serverLevel.sendParticles(ParticleTypes.COMPOSTER, x, y, z, 2, 0.16D, 0.05D, 0.16D, 0.01D);
         }
         if (this.progress >= RecyclerConfig.processTicks()) {
-            this.insertResults(results, false);
+            if (!results.isEmpty()) {
+                this.insertResults(results, false);
+            }
             this.inventory.removeItem(INPUT_SLOT, 1);
             this.progress = 0;
             ItemStack remaining = this.inventory.getItem(INPUT_SLOT);

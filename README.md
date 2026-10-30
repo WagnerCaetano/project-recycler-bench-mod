@@ -6,15 +6,15 @@ A diamond chestplate costs 8 diamonds. At the default rate of 0.6 that is `8 * 0
 
 ## Crafting
 
-The bench is crafted with three copper ingots, three iron ingots, bricks, a hopper, and a blast furnace:
+The bench is crafted with four iron ingots, three copper ingots, a hopper, and a piston:
 
 ```
-CBI
-CHI
-CFI
+ICI
+CHC
+IPI
 ```
 
-`C` copper ingot, `B` bricks, `I` iron ingot, `H` hopper, `F` blast furnace. It needs a stone pickaxe or better to pick back up.
+`I` iron ingot, `C` copper ingot, `H` hopper, `P` piston. It needs a stone pickaxe or better to pick back up.
 
 ## What can be recycled
 
@@ -22,13 +22,17 @@ Swords, tools, bows, crossbows, tridents, maces, fishing rods, shears, shields, 
 
 The bench reads that recipe. Tag ingredients, such as the planks in a wooden pickaxe, return the first item in the tag. A custom line in the config replaces that result.
 
-Smithing recipes are included, so netherite gear returns its template, netherite ingot, and diamond piece. Because a single ingredient at 60% is `0.6`, which rounds up to `1`, those one-count ingredients come back whole. Add the netherite item to `disabled_items` if a world should not allow that.
+An item with durability under 50% remaining is destroyed and returns nothing. At exactly 50% it still pays out. Items without a durability bar ignore this.
+
+Netherite gear returns only the netherite ingot. The smithing template and the diamond piece stay in the machine's recipe, but they are not given back. One ingot at 60% is `0.6`, which rounds up to 1, so the ingot comes back whole.
 
 ## Config
 
 Edit `config/recyclerbench-common.toml` in the Minecraft instance, or use Mods → Recycler Bench → Config. On a dedicated server, edit the copy in the server's `config` folder. The useful keys are:
 
 - `return_rate` — default `0.6`
+- `min_durability` — default `0.5`. Remaining durability below this returns nothing. `0` ignores wear
+- `netherite_ingot_only` — default `true`. A recipe that includes a netherite ingot returns only that ingot
 - `process_ticks` — default `40` (two seconds)
 - `play_chainsaw` — default `true`
 - `automatic_equipment` — default `true`. Set this to `false` to recycle only `extra_recipes`
@@ -44,7 +48,15 @@ extra_recipes = [
 ]
 ```
 
-`coolmod:ruby_chestplate` then returns `round(8 * return_rate)` rubies. Up to nine output stacks fit in the bench. If the output slots are full, the bench waits.
+`coolmod:ruby_chestplate` then returns `round(8 * return_rate)` rubies. A line with one ingredient returns only that item, so a modded tool can give back a single custom ingot:
+
+```toml
+extra_recipes = [
+  "coolmod:ruby_sword=coolmod:ruby*1"
+]
+```
+
+That line replaces the automatic recipe. The bench prints the durability and netherite rules above the inventory, and hovering them shows this format. Up to nine output stacks fit in the bench. If the output slots are full, the bench waits.
 
 ## Requirements
 

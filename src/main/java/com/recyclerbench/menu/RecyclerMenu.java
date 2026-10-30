@@ -20,8 +20,8 @@ public class RecyclerMenu extends AbstractContainerMenu {
     public static final int OUTPUT_X = 98;
     public static final int OUTPUT_Y = 17;
     public static final int INV_X = 8;
-    public static final int INV_Y = 98;
-    public static final int HOTBAR_Y = 156;
+    public static final int INV_Y = 126;
+    public static final int HOTBAR_Y = 184;
 
     private static final int INPUT = 0;
     private static final int OUTPUT_START = 1;

@@ -46,6 +46,8 @@ import net.minecraft.world.level.Level;
 public final class Recycling {
     private static final TagKey<Item> C_TOOLS = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools"));
     private static final TagKey<Item> C_ARMORS = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "armors"));
+    private static final TagKey<Item> C_NETHERITE_INGOTS = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "ingots/netherite"));
+    private static final TagKey<Item> FORGE_NETHERITE_INGOTS = ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/netherite"));
 
     private static final Object CACHE_LOCK = new Object();
     private static RecipeManager cachedManager;
@@ -56,25 +58,68 @@ public final class Recycling {
     }
 
     public static boolean canRecycle(Level level, ItemStack stack) {
-        return !resultsFor(level, stack).isEmpty();
+        return !ingredientsFor(level, stack).isEmpty();
     }
 
     public static List<ItemStack> resultsFor(Level level, ItemStack stack) {
-        if (level == null || stack.isEmpty() || isDisabled(stack.getItem())) {
+        Map<Item, Double> used = ingredientsFor(level, stack);
+        if (used.isEmpty() || belowDurabilityCutoff(stack)) {
             return List.of();
+        }
+        return scale(netheriteIngotOnly(used), RecyclerConfig.returnRate());
+    }
+
+    private static Map<Item, Double> ingredientsFor(Level level, ItemStack stack) {
+        if (level == null || stack.isEmpty() || isDisabled(stack.getItem())) {
+            return Map.of();
         }
 
         Map<Item, Double> used = customRecipe(stack.getItem());
         if (used == null) {
             if (!RecyclerConfig.automaticEquipment() || !isEquipment(stack)) {
-                return List.of();
+                return Map.of();
             }
             used = recipeFor(level, stack.getItem());
         }
-        if (used == null || used.isEmpty()) {
-            return List.of();
+        return used == null ? Map.of() : used;
+    }
+
+    /**
+     * Remaining durability strictly below the configured fraction yields nothing.
+     * An undamaged item is 1.0, so 0.5 still returns materials and anything under it does not.
+     */
+    private static boolean belowDurabilityCutoff(ItemStack stack) {
+        double minimum = RecyclerConfig.minDurability();
+        if (minimum <= 0.0D || !stack.isDamageableItem()) {
+            return false;
         }
-        return scale(used, RecyclerConfig.returnRate());
+        int max = stack.getMaxDamage();
+        if (max <= 0) {
+            return false;
+        }
+        double remaining = (max - stack.getDamageValue()) / (double) max;
+        return remaining < minimum;
+    }
+
+    private static Map<Item, Double> netheriteIngotOnly(Map<Item, Double> used) {
+        if (!RecyclerConfig.netheriteIngotOnly()) {
+            return used;
+        }
+        Map<Item, Double> ingots = new LinkedHashMap<>();
+        for (Map.Entry<Item, Double> entry : used.entrySet()) {
+            if (isNetheriteIngot(entry.getKey())) {
+                ingots.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return ingots.isEmpty() ? used : ingots;
+    }
+
+    private static boolean isNetheriteIngot(Item item) {
+        if ("netherite_ingot".equals(BuiltInRegistries.ITEM.getKey(item).getPath())) {
+            return true;
+        }
+        ItemStack stack = new ItemStack(item);
+        return stack.is(C_NETHERITE_INGOTS) || stack.is(FORGE_NETHERITE_INGOTS);
     }
 
     public static boolean isEquipment(ItemStack stack) {
